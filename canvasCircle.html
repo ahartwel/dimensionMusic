@@ -1,0 +1,1347 @@
+<html>
+
+<head>
+    <title>Cirlce Level</title>
+
+</head>
+<style>
+    canvas {
+        position: absolute;
+        top: 0px;
+        left: 0px;
+        width: 100%;
+        height: 100%;
+    }
+    #bCanvas {
+        width: auto!important;
+        height: auto!important;
+    }
+    #fps {
+        position: absolute;
+        width: 100;
+        height: 100;
+        background-color: white;
+        top: 0px;
+        left: 0px;
+    }
+</style>
+
+<body>
+
+    <canvas id="bCanvas"></canvas>
+    <canvas id="mainCanvas"></canvas>
+    <div id="fps"></div>
+
+
+    <script>
+        var earthColors = [];
+        earthColors[0] = {
+            r: "112",
+            g: "97",
+            b: "80"
+        }
+        earthColors[1] = {
+            r: "168",
+            g: "146",
+            b: "115"
+        }
+        earthColors[2] = {
+            r: "65",
+            g: "75",
+            b: "61"
+        }
+
+
+        var filterStrength = 20;
+        var frameTime = 0,
+            lastLoop = new Date,
+            thisLoop;
+
+        var mainC = document.getElementById("mainCanvas");
+        var bC = document.getElementById("bCanvas");;
+        mainC.width = window.innerWidth;
+        mainC.height = window.innerHeight;
+        bC.width = window.innerWidth;
+        bC.height = window.innerHeight;
+        var mCtx = mainC.getContext('2d');
+        var bCtx = bC.getContext('2d');
+
+        bCtx.fillStyle = "rgb(0,0,0)";
+        bCtx.rect(0, 0, window.innerWidth, window.innerHeight);
+        bCtx.fill();
+        var GravClusters = [];
+
+        for (var i = 0; i < 3; i++) {
+            GravClusters[i] = new GravityCenter(i * 2400 + 100, 500, 1200, i);
+            GravClusters[i].display();
+        }
+
+
+
+
+
+
+        var person = new Player(200, 200);
+        var bG = new Background();
+        window.addEventListener("keydown", keyPressed, false);
+
+        function keyPressed(e) {
+            switch (e.keyCode) {
+            case 37: //left
+
+                GravClusters[person.activeG].rotationSpeed(-0.12);
+
+                break;
+            case 38: //up
+
+                if (person.jumpCounter < 3) {
+                    person.dAcc = -3;
+                }
+                person.jumpCounter++;
+
+                break;
+            case 39: //right
+
+                GravClusters[person.activeG].rotationSpeed(0.12);
+                break;
+            case 40:
+                //down
+                person.falling = true;
+                setTimeout(function () {
+                    person.falling = false;
+
+                }, 300);
+                break;
+
+            case 32:
+
+                break;
+
+            }
+        }
+
+
+
+
+
+        requestAnimationFrame(animate);
+
+        function animate() {
+
+            mCtx.clearRect(0, 0, mainC.width, mainC.height);
+            for (var i = 0; i < GravClusters.length; i++) {
+                GravClusters[i].update();
+
+            }
+
+            person.display();
+            person.update();
+            bG.display();
+            bG.update();
+
+
+            var thisFrameTime = (thisLoop = new Date) - lastLoop;
+            frameTime += (thisFrameTime - frameTime) / filterStrength;
+            lastLoop = thisLoop;
+
+            requestAnimationFrame(animate);
+        }
+
+
+        var fpsOut = document.getElementById('fps');
+        setInterval(function () {
+            if (Math.random() < .1) {
+                fpsOut.innerHTML = (1000 / frameTime).toFixed(1) + " fps";
+
+            }
+        }, 1000);
+
+
+
+
+        function Player(x, y) {
+            this.xPos = x;
+            this.yPos = y;
+
+            this.activeG = 0;
+            this.d = Math.sqrt(Math.pow(Math.abs(this.xPos - GravClusters[this.activeG].cX), 2) + Math.pow(Math.abs(this.yPos - GravClusters[this.activeG].cY), 2));
+
+            this.r = degrees(Math.atan((GravClusters[this.activeG].cY - this.yPos) / (GravClusters[this.activeG].cX - this.xPos)));
+            console.log(this.r);
+            this.gravity = .05;
+            this.dAcc = 0;
+            this.rAcc = .003;
+            this.rSpeed = 0;
+            this.canvas = document.createElement('canvas');
+            this.canvas.width = .045 * window.innerWidth;
+            this.canvas.height = this.canvas.width;
+            this.falling = false;
+            this.context = this.canvas.getContext('2d');
+
+            this.w = (.04 * window.innerWidth) * .3;
+
+            this.halfW = .5 * window.innerWidth;
+            this.halfH = .5 * window.innerHeight;
+
+            this.timer = 0;
+
+            this.jumpCounter = 0;
+
+            this.context.fillStyle = "rgb(32,190,154)";
+            this.context.arc(.5 * this.canvas.width, .5 * this.canvas.height, .3 * this.canvas.width, 0, 2 * Math.PI, false);
+            this.context.fill();
+
+            this.orbs = [];
+
+            for (var i = 0; i < 5; i++) {
+                this.orbs[i] = new PlayerOrbs(.48 * this.canvas.width, this.context, this.canvas.width);
+                this.orbs[i].display();
+
+            }
+
+
+
+
+            this.update = function () {
+
+
+                for (var i = 0; i < this.triangleD.length; i++) {
+                    this.triangleD[i] += .2;
+                    if (this.triangleD[i] > this.dMax) {
+                        this.triangleD[i] = this.dMax;
+                    }
+                    if (this.triangleD[i] < 0) {
+                        this.triangleD[i] = Math.random() * this.dMax;
+                    }
+                    this.triangleR[i] += .5
+                    if (Math.random() < .1) {
+                        this.triangleD[i] = Math.random() * this.dMax;
+                        this.triangleR[i] = Math.random() * 720 - 360;
+
+                    }
+
+                }
+
+
+
+                this.activeGrav();
+
+                for (var i = 0; i < this.orbs.length; i++) {
+                    this.orbs[i].update();
+                }
+
+                this.dAcc += this.gravity;
+                this.r += this.rSpeed;
+
+                this.rSpeed = lerp(this.rSpeed, 0, this.rAcc);
+
+                this.d -= this.dAcc;
+
+                if (this.d < 5) {
+                    this.d = 5;
+                    this.dAcc = 0;
+                    this.jumpCounter = 0;
+                    GravClusters[this.activeG] = new GravityCenter(Math.random() * window.innerWidth * 3, Math.random() * window.innerHeight * 4, 1200, this.activeG);
+                    this.activeG++;
+                    if (this.activeG > GravClusters.length - 1) {
+                        this.activeG = 0;
+                    }
+                    console.log(this.activeG);
+                    // this.xPos=Math.random()*window.innerWidth;
+                    //this.yPos = Math.random()*window.innerHeight;
+                    this.r = degrees(Math.atan((GravClusters[this.activeG].cY - this.yPos) / (GravClusters[this.activeG].cX - this.xPos)));
+                    this.d = Math.sqrt(Math.pow(Math.abs(this.xPos - GravClusters[this.activeG].cX), 2) + Math.pow(Math.abs(this.yPos - GravClusters[this.activeG].cY), 2));
+
+                }
+                //console.log(this.d);
+                this.xPos = GravClusters[this.activeG].cX + Math.cos(radians(this.r)) * this.d;
+                this.yPos = GravClusters[this.activeG].cY + Math.sin(radians(this.r)) * this.d;
+
+                this.timer++;
+
+                if (this.timer >= 5) {
+                    this.timer = 0;
+
+                }
+
+                if (dist(this.xPos, this.yPos, this.halfW, this.halfH) > .15 * window.innerHeight) {
+
+                    var d = dist(this.xPos, this.yPos, this.halfW, this.halfH);
+                    var angle = Math.asin((this.yPos - this.halfH) / d);
+
+                    var smallD = d - (0.15 * window.innerHeight);
+
+                    var oA = angle;
+
+                    var xAdd = Math.cos(oA) * smallD;
+                    var yAdd = Math.sin(oA) * smallD;
+
+
+                    if (this.xPos < this.halfW) {
+                        xAdd = Math.abs(xAdd);
+                    } else if (this.xPos > this.halfW) {
+                        xAdd = Math.abs(xAdd) * -1;
+                    }
+
+                    if (this.yPos < this.halfH) {
+                        yAdd = Math.abs(yAdd);
+                    } else if (this.yPos > this.halfH) {
+                        yAdd = Math.abs(yAdd) * -1;
+                    }
+
+
+
+                    this.addOffset(xAdd, yAdd);
+
+
+                }
+                /*
+                if (this.xPos < .2 * window.innerWidth) {
+            this.addOffset(Math.abs(this.xPos - (.2 * window.innerWidth)), 0);
+        } else if (this.xPos > .8 * window.innerWidth) {
+            this.addOffset(-1 * Math.abs(this.xPos - (.8 * window.innerWidth)), 0);
+        }
+
+        if (this.yPos < .2 * window.innerHeight) {
+            this.addOffset(0, Math.abs(this.yPos - (.2 * window.innerHeight)));
+        } else if (this.yPos > .8 * window.innerHeight) {
+            this.addOffset(0, -1 * Math.abs(this.yPos - (.8 * window.innerHeight)));
+        }
+        */
+
+            };
+
+            this.activeGrav = function () {
+                var shortest = dist(GravClusters[this.activeG].cX, GravClusters[this.activeG].cY, this.xPos, this.yPos);
+
+                for (var i = 0; i < GravClusters.length; i++) {
+                    if (dist(GravClusters[i].cX, GravClusters[i].cY, this.xPos, this.yPos) <= shortest - 10) {
+                        this.activeG = i;
+                        this.d = Math.sqrt(Math.pow(Math.abs(this.xPos - GravClusters[this.activeG].cX), 2) + Math.pow(Math.abs(this.yPos - GravClusters[this.activeG].cY), 2));
+
+
+                    }
+
+                }
+
+
+            };
+
+            this.addOffset = function (x, y) {
+                for (var i = 0; i < GravClusters.length; i++) {
+                    GravClusters[i].cX += x;
+                    GravClusters[i].cY += y;
+
+                    //add particle offsets
+                }
+                for (var i = 0; i < bG.xPos.length; i++) {
+                    bG.xPos[i] += x;
+                    bG.yPos[i] += x;
+                }
+                this.xPos += x;
+                this.yPos += y;
+
+            };
+
+
+
+
+
+            this.dMax = .02 * window.innerWidth;
+            this.triangleD = [];
+            this.triangleR = [];
+
+            for (var i = 0; i < 3; i++) {
+
+                this.triangleD[i] = Math.random() * this.dMax;
+
+                this.triangleR[i] = i * 120;
+
+
+
+            }
+
+            this.centerX = .5 * this.canvas.width;
+            this.centerY = .5 * this.canvas.height;
+
+
+
+
+
+            this.display = function () {
+                // if (this.timer==0) {
+                //if (Math.random()<.1) {
+                this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+                //}
+                canvasReset(this.context);
+
+                this.context.beginPath();
+                this.context.fillStyle = "rgba(255,255,255,.7)";
+                for (var i = 0; i < this.triangleD.length; i++) {
+                    var x = Math.floor(Math.cos(radians(this.triangleR[i])) * this.triangleD[i] + this.centerX);
+                    var y = Math.floor(Math.sin(radians(this.triangleR[i])) * this.triangleD[i] + this.centerY);
+                    if (i == 0) {
+                        this.context.moveTo(x, y);
+                    } else {
+                        this.context.lineTo(x, y);
+                    }
+
+                }
+
+                this.context.fill();
+
+
+                /*
+             
+                   this.context.fillStyle = "rgba(20,29,40,.13)";
+                
+                this.context.arc(.5*this.canvas.width,.5*this.canvas.height,.3*this.canvas.width, 0, 2 * Math.PI, false);
+             this.context.fill();
+                
+                */
+                this.context.strokeWidth = 1;
+                this.context.strokeStyle = "rgba(80,10,200,.3)";
+                for (var i = 0; i < this.orbs.length; i++) {
+                    if (i == 0) {
+                        this.context.fillStyle = "rgba(40,186,198,.4)";
+                    } else if (i == Math.floor(.66 * this.orbs.length)) {
+                        this.context.fillStyle = "rgba(200,106,100,.3)";
+                    }
+
+                    this.orbs[i].display();
+                }
+                this.context.fill();
+
+                //}
+                mCtx.translate(this.xPos, this.yPos);
+                mCtx.drawImage(this.canvas, -.5 * this.canvas.width, -.5 * this.canvas.height);
+                canvasReset(mCtx);
+
+
+
+            }
+
+
+
+
+        }
+
+        function PlayerOrbs(dMax, context, contextWidth, canvas) {
+            this.r = Math.random() * 360;
+            this.d = Math.random() * (dMax);
+            this.rSpeed = Math.random() * .04;
+
+            this.up = true;
+
+            this.dMax = .8 * dMax;
+            this.canvas = canvas;
+            this.context = context;
+            this.contextWidth = contextWidth;
+
+            this.context.translate(.5 * this.contextWidth, .5 * this.contextWidth);
+            this.context.rotate(this.r);
+            this.context.translate(this.d, 0);
+            this.context.arc(0, 0, 4, 0, 2 * Math.PI, false);
+            canvasReset(this.context);
+            this.context.fill();
+
+            this.x = 0;
+            this.y = 0;
+            this.fallCounter
+            this.update = function () {
+                if (person.dAcc > -.8) {
+                    this.r += this.rSpeed;
+                    //console.log(this.r);
+                    //this.d = Math.random() * this.dMax; 
+                    if (this.up) {
+                        this.d += .02 * this.dMax;
+                    } else {
+                        this.d -= .02 * this.dMax;
+                    }
+
+                    if (this.d > this.dMax) {
+                        this.up = false;
+                    }
+                    if (this.d < -this.dMax) {
+                        this.up = true;
+                        if (Math.random() < .2) {
+                            this.rSpeed = -1 * this.rSpeed;
+                        }
+                        if (this.fallCounter != 0) {
+                            this.fallCounter = 0;
+                            this.x = -1000;
+                            this.y = -1000;
+                        }
+                    }
+                } else {
+                    this.d = lerp(this.d, 0, .02);
+
+                }
+
+            };
+
+
+
+            this.display = function () {
+                // if (Math.random()<.3) {
+
+
+
+
+                this.context.beginPath();
+
+                this.context.translate(.5 * this.contextWidth, .5 * this.contextWidth);
+                this.context.rotate(this.r);
+                this.context.translate(this.d, 0);
+                this.context.arc(0, 0, Math.random() * 4, 0, 2 * Math.PI, false);
+                this.context.fill();
+
+                canvasReset(this.context);
+                // }
+
+
+            }
+
+
+        }
+
+
+
+
+        function Background() {
+
+            this.xPos = [];
+            this.yPos = [];
+            this.r = [];
+            this.g = [];
+            this.b = [];
+            this.a = [];
+            for (var i = 0; i < 25; i++) {
+
+                this.xPos[i] = Math.random() * window.innerWidth;
+                this.yPos[i] = Math.random() * window.innerHeight;
+
+                this.r[i] = Math.floor(Math.random() * 255);
+                this.g[i] = Math.floor(Math.random() * 255);
+                this.b[i] = Math.floor(Math.random() * 255);
+                this.a[i] = Math.random();
+            }
+
+            bCtx.rect(0, 0, window.innerWidth, window.innerHeight);
+            bCtx.fillStyle = "rgb(0,0,0)";
+            bCtx.fill();
+
+            this.update = function () {
+                /*   
+                for (var i =0; i<this.xPos.length;i++) {
+                 this.yPos[i]=lerp(this.yPos[i],GravClusters[person.activeG].cY,.02);
+                 this.xPos[i]=lerp(this.xPos[i],GravClusters[person.activeG].cX,.02);
+                    
+                     if (Math.random()<.1) {
+                      this.xPos[i]+=Math.random()*15-7.5;   
+                     }
+                    
+                    this.r[i] +=1;      
+            this.g[i] +=1;      
+            this.b[i] +=1;
+                    
+                    if ((this.r[i]>255) || (this.g[i]>255) || (this.b[i]>255)) {
+                         this.r[i] = Math.floor( Math.random()*255 );        
+            this.g[i] = Math.floor( Math.random()*255 );        
+            this.b[i] = Math.floor( Math.random()*255 );
+                        
+                    }
+                    
+                    if (dist(this.xPos[i],this.yPos[i],GravClusters[person.activeG].cY,GravClusters[person.activeG].cX)<20) {
+                         this.xPos[i]=Math.floor(Math.random()*window.innerWidth);
+                this.yPos[i] = Math.floor(Math.random()*window.innerHeight);
+                this.xPos[i] = Math.floor(Math.random()*window.innerWidth);
+                
+            this.r[i] = Math.floor( Math.random()*255 );        
+            this.g[i] = Math.floor( Math.random()*255 );        
+            this.b[i] = Math.floor( Math.random()*255 );        
+           this.a[i] = Math.random();
+                        
+                    }
+                  */
+
+
+            }
+
+            this.display = function () {
+                /* bCtx.clearRect(0,0,bCtx.canvas.width, bCtx.canvas.height);
+             if (Math.random()<.1) {
+                for (var i =0; i<5;i++) {
+                    bCtx.fillStyle = "rgba(" + this.r[i] + "," + this.g[i] + "," + this.b[i] + ",.5)";
+            bCtx.beginPath();
+                  bCtx.rect(this.xPos[i],this.yPos[i],15,15);
+                
+                bCtx.fill();
+                
+                       bCtx.fillStyle = "rgb(0,0,0)";
+                     bCtx.beginPath();
+                  bCtx.rect(this.xPos[i]+6,this.yPos[i]-25,20,20);
+                
+                bCtx.fill();
+                   
+                  
+              }
+                
+             }
+                
+                */
+            };
+
+
+
+
+
+        }
+
+        function Trees(maxWidth, maxHeight, whereItGoes) {
+
+            this.canvas = document.createElement('canvas');
+            this.canvas.width = Math.random() * (maxWidth - (maxWidth / 2)) + (maxWidth / 2) * 1.2;
+            this.canvas.height = Math.random() * (maxHeight - (maxHeight / 2)) + (maxHeight / 2)+200;
+            this.context = this.canvas.getContext('2d');
+
+            this.canvas2 = document.createElement('canvas');
+            this.canvas2.width = this.canvas.width;
+            this.canvas2.height = this.canvas.height;
+            this.context2 = this.canvas.getContext('2d');
+
+
+            this.colors = [];
+            this.colors[0] = "rgba(129,101,154";
+            this.colors[1] = "rgba(143,78,116";
+            this.colors[2] = "rgba(171,160,73";
+            this.colors[3] = "rgba(196,84,62";
+            this.colors[4] = "rgba(249,185,88";
+
+
+            this.getRandomColor = function (o) {
+                var wC = Math.floor(Math.random() * 2 + 3);
+
+                return this.colors[wC] + "," + o + ")";
+            };
+
+
+            this.timerMax = 15;
+            this.timer = 0;
+
+            this.iterations = 20;
+            this.positionOnPlatform = whereItGoes;
+            this.xPos = [];
+            this.yPos = [];
+            this.l = Math.random() * (.3 * (this.canvas.height+200)) + (.3 * (this.canvas.height+200));
+
+            this.xPos[0] = .5 * this.canvas.width;
+            this.yPos[0] = this.canvas.height;
+            this.xPos[1] = .5 * this.canvas.width;
+            this.yPos[1] = this.l;
+            this.r=[];
+            this.r[0]=0;
+            this.r[1]=0;
+            this.thickness = 5;
+            this.branchTracking = 1;
+            this.generation = [];
+            this.branchColor = [];
+            this.branchThickness = [];
+            this.lX = [];
+            this.lY =[];
+            this.lW =[];
+            this.lH = [];
+            this.lCounter=0;
+
+
+            this.createBranches = function (startX, startY, l, t, howFar) {
+
+                this.iterations -= 1;
+                l = .8 * l;
+                t = .8 * t;
+
+                this.branchTracking++;
+                var angle = radians(Math.random() * -90 + 45);
+                this.r[this.branchTracking] = angle;
+                var d = Math.random() * (l/2) + (l/2);
+                this.xPos[this.branchTracking] = startX + Math.cos(angle) * (Math.random() * d);
+                this.yPos[this.branchTracking] = startY + Math.sin(angle) * (Math.random() * d);
+                this.generation[this.branchTracking] = howFar;
+                
+                
+                this.context.beginPath();
+                canvasReset(this.context);
+                
+                
+                this.context.lineWidth = t;
+                this.branchColor[this.branchTracking] = this.getRandomColor(1);
+                this.context.strokeStyle =  this.branchColor[this.branchTracking];
+               
+                this.context.moveTo(startX, startY);
+                this.context.lineTo(this.xPos[this.branchTracking], this.yPos[this.branchTracking]);
+                this.context.stroke();
+
+                this.branchTracking++;
+                this.generation[this.branchTracking] = howFar;
+
+                angle = radians(Math.random() * -180 - 45);
+                 this.r[this.branchTracking] = angle;
+                d = Math.random() * l;
+
+                this.xPos[this.branchTracking] = startX + Math.cos(angle) * (Math.random() * (d / 2) + (d / 2));
+
+                this.yPos[this.branchTracking] = startY + Math.sin(angle) * (Math.random() * (d / 2) + (d / 2));
+                this.branchColor[this.branchTracking] = this.getRandomColor(1);
+                this.context.strokeStyle =  this.branchColor[this.branchTracking];
+                this.context.beginPath();
+                canvasReset(this.context);
+                this.context.moveTo(startX, startY);
+                this.context.lineTo(this.xPos[this.branchTracking], this.yPos[this.branchTracking]);
+                this.context.stroke();
+
+                for (var i = 0; i < Math.random() * 23; i++) {
+                    this.lX[this.lCounter] = (Math.random() * 40 - 20);
+                    this.lY[this.lCounter] = (Math.random() * 40 - 20);
+                    this.lW[this.lCounter] =  Math.random() * 15;
+                    this.lH[this.lCounter] =  Math.random() * 15;
+                    this.context.fillStyle = this.getRandomColor(0.6);
+                    this.context.beginPath();
+                    this.context.rect(this.xPos[this.branchTracking] + this.lX[this.lCounter], this.yPos[this.branchTracking] + this.lY[this.lCounter], this.lW[this.lCounter], this.lH[this.lCounter]);
+                    this.lCounter++;
+                    this.context.fill();
+                }
+
+                if (l > .1 * this.canvas.height) {
+
+                    var x1 = this.xPos[this.branchTracking];
+                    var x2 = this.xPos[this.branchTracking - 1];
+                    var y2 = this.yPos[this.branchTracking - 1];
+                    var y1 = this.yPos[this.branchTracking];
+
+
+
+                    this.createBranches(x1, y1, l, t, howFar + 1);
+                    this.createBranches(x2, y2, l, t, howFar + 1);
+                    
+                        }
+
+                //this.createTrunk();
+
+
+
+            };
+
+            
+            
+            
+            this.newBranches = function (startX, startY, l, t, howFar) {
+              
+                 //this.iterations -= 1;
+                l = .8 * l;
+                t = .8 * t;
+
+                this.branchTracking++;
+                var angle = radians(Math.random() * -90 + 45);
+                 this.r[this.branchTracking] += .00002;
+                var d = Math.random() * l;
+                this.xPos[this.branchTracking] = startX + Math.cos( this.r[this.branchTracking]) * (Math.random() * d);
+                this.yPos[this.branchTracking] = startY + Math.sin( this.r[this.branchTracking]) * (Math.random() * d);
+                //this.generation[this.branchTracking] = howFar;
+                
+                
+                this.context.beginPath();
+                canvasReset(this.context);
+                
+                
+                this.context.lineWidth = t;
+               // this.branchColor[this.branchTracking] = this.getRandomColor(1);
+                this.context.strokeStyle =  this.branchColor[this.branchTracking];
+               
+                this.context.moveTo(startX, startY);
+                this.context.lineTo(this.xPos[this.branchTracking], this.yPos[this.branchTracking]);
+                this.context.stroke();
+
+                this.branchTracking++;
+               // this.generation[this.branchTracking] = howFar;
+
+                angle = radians(Math.random() * -180 - 45);
+                 this.r[this.branchTracking] += .00002;
+               d = Math.random() * l;
+
+               this.xPos[this.branchTracking] = startX + Math.cos( this.r[this.branchTracking]) * (Math.random() * (d / 2) + (d / 2));
+
+                this.yPos[this.branchTracking] = startY + Math.sin( this.r[this.branchTracking]) * (Math.random() * (d / 2) + (d / 2));
+               // this.branchColor[this.branchTracking] = this.getRandomColor(1);
+                this.context.strokeStyle =  this.branchColor[this.branchTracking];
+                this.context.beginPath();
+                canvasReset(this.context);
+                this.context.moveTo(startX, startY);
+                this.context.lineTo(this.xPos[this.branchTracking], this.yPos[this.branchTracking]);
+                this.context.stroke();
+
+                for (var i = 0; i < Math.random() * 23+10; i++) {
+
+                    this.context.fillStyle = this.getRandomColor(0.6);
+                    this.context.beginPath();
+                   this.context.rect(this.xPos[this.branchTracking] + this.lX[this.lCounter], this.yPos[this.branchTracking] + this.lY[this.lCounter], this.lW[this.lCounter], this.lH[this.lCounter]);
+                    this.lCounter++;
+                    this.context.fill();
+                }
+
+                if (l > .2 * this.canvas.height) {
+
+                    var x1 = this.xPos[this.branchTracking];
+                    var x2 = this.xPos[this.branchTracking - 1];
+                    var y2 = this.yPos[this.branchTracking - 1];
+                    var y1 = this.yPos[this.branchTracking];
+
+
+
+                    this.newBranches(x1, y1, l, t, howFar + 1);
+                    this.newBranches(x2, y2, l, t, howFar + 1);
+                    
+                        }
+                
+            };
+            
+            this.newTrunk = function () {
+                 this.branchTracking = 1;
+                this.lCounter=0;
+                this.context.clearRect(0,0,this.canvas.width, this.canvas.height);
+                this.context.strokeStyle = this.branchColor[0];
+                this.context.lineWidth = this.thickness;
+                this.context.beginPath();
+                this.context.moveTo(this.xPos[0], this.yPos[0]);
+                this.context.lineTo(this.xPos[1], this.yPos[1]);
+                this.context.stroke();
+            
+                this.newBranches(this.xPos[1], this.yPos[1], this.yPos[0] - this.yPos[1], this.thickness, 1);
+
+
+
+
+            }
+
+
+            this.update = function () {
+               this.timer++;
+            
+                
+                if (this.timer>this.timerMax*.95) {
+                    if (Math.random()<.4) {
+                    this.newTrunk();
+                    }
+                
+                    if (this.timer>=this.timerMax) {
+                     this.timer=0;
+                     this.timerMax=Math.floor( Math.random()*1000+120)
+                    }
+                
+                }
+
+            };
+            this.display = function (angle, rotation, widthOnPlatform) {
+
+                mCtx.drawImage(this.canvas, 50, 50);
+                // console.log(this.canvas.width, this.canvas.height);  
+
+            }
+
+            this.createTrunk = function () {
+                this.branchColor[0] = this.getRandomColor("1");
+                this.context.strokeStyle = this.branchColor[0];
+                this.context.lineWidth = this.thickness;
+                this.context.beginPath();
+                this.context.moveTo(this.xPos[0], this.yPos[0]);
+                this.context.lineTo(this.xPos[1], this.yPos[1]);
+                this.context.stroke();
+                this.generation[0] = 0;
+                this.generation[1] = 0;
+                this.createBranches(this.xPos[1], this.yPos[1], this.yPos[0] - this.yPos[1], this.thickness, 1);
+
+                //this.createBranches(this.xPos[1], this.yPos[1],this.yPos[0] - this.yPos[1]);
+
+
+            };
+
+
+
+
+
+
+
+
+
+        }
+
+
+
+        function gravityParticle(canvas, context, id) {
+            this.d = Math.random() * window.innerWidth;
+            this.r = Math.random() * 360;
+            this.rSpeed = .04;
+
+            this.id = id;
+            this.canvas = canvas;
+            this.context = context;
+
+
+            this.display = function () {
+                canvasReset(this.context);
+                this.context.beginPath();
+                this.context.moveTo(GravClusters[this.id].cX, GravClusters[this.id].cY);
+                this.context.rotate(radians(this.r));
+                this.context.translate(this.d, 0);
+                this.context.rect(-5, -5, 10, 10);
+                this.context.fill();
+
+                console.log(this.r + " " + this.d);
+
+            };
+            this.update = function () {
+                this.r += this.rSpeed;
+                this.d = lerp(this.d, 0, .05);
+
+                if (this.d <= 2) {
+                    this.d = Math.random() * window.innerWidth;
+                    this.r = Math.random() * 360;
+                }
+
+
+            }
+
+
+        }
+
+
+        function GravityCenter(x, y, r, id) {
+            this.cX = x;
+            this.cY = y;
+            this.id = id;
+            this.r = r;
+            this.rSpeed = .3;
+            this.canvas = document.createElement('canvas');
+            this.ctx = this.canvas.getContext('2d');
+            this.canvas.width = r * 2 + 1000;
+            this.canvas.height = r * 2 + 1000;
+            this.halfW = this.canvas.width / 2;
+            this.halfH = this.canvas.height / 2;
+
+
+            this.rOffSet = 0;
+
+            this.platforms = [];
+            // var numberOfPlatforms = Math.random()*(50-20)+20
+            var numberOfPlatforms = 30;
+            //var dMax = this.r;
+            //var dMin = dMax/2;
+            var dNew = .9 * this.r;
+            var dUp = true;
+            for (var i = 0; i < numberOfPlatforms; i++) {
+                if (Math.random() < .5) {
+                    var rotAmount = Math.random() * (-25 + 10) - 10;
+                } else {
+                    rotAmount = Math.random() * (20 - 15) + 15;
+                }
+                this.platforms[i] = new Platform(dNew, i * rotAmount, this.ctx, this.canvas, this.id, this.r);
+
+                /*if (dMax==this.r) {
+                    if (Math.random() <.4) {
+                    dMax= dMax/2;
+                    dMin = dMax*.2;
+                    }
+                 
+                } else {
+                 dMax = dMax*2;
+                     dMin = dMax/2;
+                }*/
+                if (dUp == true) {
+                    dNew += (Math.random() * (-(1.3 / numberOfPlatforms) + (1 / (numberOfPlatforms * 2))) - (1 / (numberOfPlatforms * 2))) * this.r;
+                    // console.log(dNew);
+                }
+                if (dNew < .15 * this.r) {
+                    dNew = 1 * this.r;
+                }
+
+
+
+                //this.platforms[i].display();
+
+            }
+
+
+            this.rotationSpeed = function (amount) {
+                for (var i = 0; i < this.platforms.length; i++) {
+                    this.platforms[i].rSpeed += amount;
+                }
+
+
+            };
+
+            this.display = function () {
+
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                this.ctx.fillStyle = "rgb(255,255,255)";
+
+                this.ctx.beginPath();
+                for (var i = 0; i < this.platforms.length; i++) {
+
+                    this.platforms[i].display();
+
+                }
+                //this.ctx.stroke();
+                mCtx.translate(this.cX, this.cY);
+                mCtx.drawImage(this.canvas, -this.halfW, -this.halfH);
+                canvasReset(mCtx);
+
+            }
+
+
+            this.update = function () {
+                this.rOffSet += this.rSpeed;
+
+                for (var i = 0; i < this.platforms.length; i++) {
+                    this.platforms[i].collisionDetection();
+                }
+
+                if ((this.cX < window.innerWidth + this.halfW) && (this.cX > -this.halfW)) {
+                    if ((this.cY > -this.halfH) && (this.cY < window.innerHeight + this.halfH)) {
+                        //console.log("damn");
+                        this.display();
+                    }
+                }
+
+            };
+
+
+        }
+
+
+        function Platform(d, r, context, canvas, id, radius) {
+
+            this.context = context;
+            this.canvas = canvas;
+
+            this.xPos = 0;
+            this.yPos = 0;
+
+            this.id = id;
+
+            this.d = d;
+            this.r = r;
+
+            this.rSpeed = lerp(0.1, 1, (this.d / (window.innerWidth * .9)));
+
+            this.w = (this.d / radius) * (600 - 50) + 50;
+            if (Math.random()<.5) {
+             this.w=this.w*.6;   
+            }
+            this.h = (this.d / radius) * (250 - 80) + 80;
+
+
+            this.landCanvas = document.createElement('canvas');
+            this.land = this.landCanvas.getContext('2d');
+            this.landCanvas.width = this.w;
+            this.landCanvas.height = this.h * 1.4;
+            this.land.lineWidth = 0;
+            this.land.fillStyle = "rgba(0,0,0,.5)";
+            this.hasTree = false;
+            if (Math.random() < .3) {
+                this.hasTree = true;
+                this.tree = new Trees(this.landCanvas.width * 2, this.landCanvas.width * 2, Math.random() * .5 + .25);
+                this.tree.createTrunk();
+            }
+
+            this.createLand = function () {
+
+
+
+
+                var side = 0;
+                var x = 0;
+                var startX = 0;
+                var startY = 0;
+                var y = 0;
+                var width = this.w;
+                var height = this.h / 1.5;
+                var xAdd = xAdd = Math.floor(Math.random() * ((.4 * width) - (.2 * width)) + (.2 * width));;
+                var yAdd = Math.floor(Math.random() * (height - .8 * height) + (.8 * height));
+                //console.log(yAdd);
+                var r1, r2, r3, r4;
+                var whichColor = 0;
+
+                var color = "rgba(" + earthColors[whichColor].r + "," + earthColors[whichColor].g + "," + earthColors[whichColor].b + ", .7)";
+
+                this.lineColor = Math.floor(Math.random() * 2);
+
+                this.land.fillStyle = "rgba(" + earthColors[whichColor].r + "," + earthColors[whichColor].g + "," + earthColors[whichColor].b + ", .7)";
+
+                for (var i = 0; i < 150 * 4; i++) {
+
+
+
+                    if (side > 3) {
+
+
+                        side = 0;
+                        x += xAdd - (Math.random() * (.3 * width));
+                        this.land.closePath();
+                        this.land.fill();
+
+                        whichColor++;
+                        if (whichColor >= 3) {
+                            whichColor = 0;
+                        }
+
+                        this.land.fillStyle = "rgba(" + earthColors[whichColor].r + "," + earthColors[whichColor].g + "," + earthColors[whichColor].b + ", .7)";
+                        //  this.land.stroke();
+
+                        if (x > width) {
+
+
+                            startX += .2 * width;
+                            width = .6 * width;
+
+                            x = startX;
+                            y += (Math.random() * .2 + .5) * height;
+
+                            height = .9 * height;
+                            xAdd = Math.random() * ((.3 * width) - (.2 * width)) + (.2 * width);
+                            yAdd = Math.random() * (height - .8 * height) + (.8 * height);
+
+
+                        }
+
+
+                    }
+
+                    r1 = Math.random() * (.8 * height) - (.4 * height);
+                    r2 = Math.random() * (.7 * height) - (.35 * height);
+                    r3 = Math.random() * (.6 * height) - (.3 * height);
+                    r4 = Math.random() * (height) - (.5 * height);
+                    switch (side) {
+                    case 0:
+
+
+
+                        this.land.beginPath();
+                        this.land.moveTo(x, y);
+
+                        x += xAdd;
+
+                        //console.log(x);
+                        this.land.lineTo(x, y + r1);
+
+                        break;
+                    case 1:
+
+                        y += yAdd;
+
+                        this.land.lineTo(x + r2, y + r1);
+                        break;
+                    case 2:
+                        x -= xAdd;
+
+                        this.land.lineTo(x + r2, y + r3);
+                        break;
+                    case 3:
+                        y -= yAdd;
+                        this.land.lineTo(x, y);
+                        break;
+
+                    }
+
+                    side++;
+
+                }
+                this.land.closePath();
+
+                //this.land.rect(0,0,100,100);
+                // this.land.stroke();
+                this.land.fill();
+
+
+                /* this.land.strokeStyle = this.land.fillStyle= "rgba(" + earthColors[this.lineColor].r + "," + earthColors[this.lineColor].g + "," + earthColors[this.lineColor].b + ", .6)";
+            this.land.moveTo(0, 0);
+                this.land.lineTo(this.w, 0);
+                this.land.lineWidth = 5;
+                 this.land.stroke();
+               // this.context.drawImage(this.landCanvas,Math.random()*800,Math.random()*800);
+                */
+                this.land.fillStyle = "rgba(255,255,255,.1)";
+                var xx = 0;
+                var yy = 0;
+                var ww = Math.random() * (.05 * this.w);
+
+
+                while (xx < this.w) {
+                    ww = Math.random() * (.02 * this.w);
+
+                    if (Math.random() < .05) {
+                        this.land.rect(xx, yy, ww, Math.random() * this.h * 1.3);
+                    } else {
+                        this.land.rect(xx, yy, ww, Math.random() * this.h / 3);
+                    }
+                     if (Math.random()<.05) {
+                         this.land.fill();
+                     }
+                         
+                         xx += ww * Math.random() - 0.3;
+
+
+                }
+                this.land.fill();
+
+
+            };
+
+            this.createLand();
+            this.createLand();
+            this.createLand();
+
+
+
+            this.display = function () {
+
+                this.context.translate(.5 * this.canvas.width, .5 * this.canvas.height);
+                this.context.rotate(radians(this.r));
+                this.context.translate(this.d, 0);
+                this.context.rotate(radians(-270));
+                //this.context.drawImage(this.platforms[i].canvas, -.5 * this.platforms[i].w, 0);
+
+
+
+                if ((this.xPos < window.innerWidth + this.h + 50) && (this.xPos > -this.h - 50)) {
+                    if ((this.yPos < window.innerHeight + this.h + 50) && (this.yPos > -this.h - 50)) {
+                        /*this.context.moveTo(-.5*this.w, 0);
+                this.context.lineTo(.5*this.w, 0);
+                this.context.lineWidth = 5;
+                */
+
+                        this.context.drawImage(this.landCanvas, -.5 * this.w, 0);
+                        if (this.hasTree) {
+                            this.tree.update();
+                            this.context.drawImage(this.tree.canvas, -.75 * this.w, -1 * this.tree.canvas.height);
+                        }
+                    }
+                }
+                canvasReset(this.context);
+
+            };
+
+            this.collisionDetection = function () {
+                this.r += this.rSpeed;
+
+                this.xPos = GravClusters[this.id].cX + Math.cos(radians(this.r)) * this.d;
+                this.yPos = GravClusters[this.id].cY + Math.sin(radians(this.r)) * this.d;
+
+
+
+                if (dist(this.xPos, this.yPos, person.xPos, person.yPos) < person.canvas.width + 200) {
+
+                    var aX = this.xPos + (Math.cos(radians(this.r + 90)) * (.51 * this.w));
+                    var aY = this.yPos + (Math.sin(radians(this.r + 90)) * (.51 * this.w));
+
+                    var bX = this.xPos - (Math.cos(radians(this.r + 90)) * (.51 * this.w));
+                    var bY = this.yPos - (Math.sin(radians(this.r + 90)) * (.51 * this.w));
+                    /*
+    mCtx.beginPath();
+    mCtx.strokeStyle="rgb(255,255,255)";
+   
+    mCtx.moveTo(aX,aY);
+    mCtx.lineTo(this.xPos,this.yPos);
+       mCtx.stroke();
+    mCtx.strokeStyle="rgb(200,255,170)";
+    mCtx.strokeWidth=5;
+    mCtx.moveTo(bX,bY);
+    mCtx.lineTo(this.xPos,this.yPos);
+    
+                    mCtx.stroke();
+*/
+                    //if (this.r>-180) {
+                    //if (((player.xPos<=aX)&&(player.xPos>=bX)) || (player.yPos<=aY)&&(player.yPos>=bY)) {
+                    var d = dist(bX, bY, person.xPos, person.yPos);
+                    var c = dist(aX, aY, person.xPos, person.yPos);
+                    var x = lerp(bX, aX, d / (d + c));
+                    var y = lerp(bY, aY, d / (d + c));
+                    //console.log(d);
+                    if (dist(person.xPos, person.yPos, x, y) <= person.w) {
+                        if (person.dAcc > 0) {
+                            if (person.falling) {
+                                person.dAcc = 2;
+                            } else {
+                                person.dAcc = -.3 * person.dAcc;
+                            }
+
+                            person.rSpeed = lerp(person.rSpeed, this.rSpeed, .95);
+                            person.d += .2;
+
+                            person.jumpCounter = 0;
+                        }
+
+                    }
+                }
+
+
+                //}
+
+                /*
+    } 
+    else {
+      if (((player.xPos>=aX)&&(player.xPos<=bX)) || (player.yPos>=aY)&&(player.yPos<=bY)) {
+        var d = dist(bX, bY, player.xPos, player.yPos)-15;
+        var c = dist(aX, aY, player.xPos, player.yPos);
+        var x = lerp(bX, aX, d/(d+c));
+        var y = lerp(bY, aY, d/(d+c));
+        if (dist(player.xPos, player.yPos, x, y)<=player.w) {
+        player.moveRight(this.rSpeed);
+          player.collision=true;
+            
+            console.log(this.r);
+            
+        }
+      }
+    }
+    
+    */
+
+            };
+
+
+        }
+
+
+        function dist(x1, y1, x2, y2) {
+
+            var dx = Math.abs(x1 - x2);
+            var dy = Math.abs(y1 - y2);
+
+            var d = Math.sqrt(Math.pow(dx, 2) + Math.pow(dy, 2));
+
+            return d;
+
+        }
+
+        function lerp(a, b, t) {
+            var x = a + t * (b - a);
+            return x;
+        }
+
+        function radians(degrees) {
+            return degrees * Math.PI / 180;
+        };
+
+        function degrees(radians) {
+            return radians * 180 / Math.PI;
+        };
+
+        function canvasReset(context) {
+            context.setTransform(1, 0, 0, 1, 0, 0);
+        }
+    </script>
+</body>
+
+
+
+</html>
