@@ -1,3 +1,6 @@
+
+
+
 <html>
 
 <head>
@@ -34,6 +37,37 @@
 
 
     <script>
+        
+        /*
+        var o = { 
+  a: {
+    b:2
+  }
+}; // 2 objects are created. One is referenced by the other as one of its property.
+// The other is referenced by virtue of being assigned to the 'o' variable.
+// Obviously, none can be garbage-collected
+
+
+var o2 = o; // the 'o2' variable is the second thing that has a reference to the object
+o = 1; // now, the object that was originally in 'o' has a unique reference embodied by the 'o2' variable
+
+var oa = o2.a; // reference to 'a' property of the object.
+// This object has now 2 references: one as a property, the other as the 'oa' variable
+
+o2 = "yo"; // The object that was originally in 'o' has now zero references to it.
+// It can be garbage-collected.
+// However what was its 'a' property is still referenced by the 'oa' variable, so it cannot be free'd
+
+oa = null; // what was the 'a' property of the object originally in o has zero references to it.
+// it can be garbage collected.
+
+GARBAGE COLLECTION ON EVERYTHING(ESPECIALLY IN TREES, ANYTHING DECLARED WITH VAR (PROBABLY)
+CHANGE ANGLE AND D TO A
+CLOSURES
+
+*/
+        
+        
         var earthColors = [];
         earthColors[0] = {
             r: "112",
@@ -150,7 +184,7 @@
 
         var fpsOut = document.getElementById('fps');
         setInterval(function () {
-            if (Math.random() < .1) {
+            if (Math.random() < .5) {
                 fpsOut.innerHTML = (1000 / frameTime).toFixed(1) + " fps";
 
             }
@@ -238,19 +272,8 @@
                 this.d -= this.dAcc;
 
                 if (this.d < 5) {
-                    this.d = 5;
-                    this.dAcc = 0;
-                    this.jumpCounter = 0;
-                    GravClusters[this.activeG] = new GravityCenter(Math.random() * window.innerWidth * 3, Math.random() * window.innerHeight * 4, 1200, this.activeG);
-                    this.activeG++;
-                    if (this.activeG > GravClusters.length - 1) {
-                        this.activeG = 0;
-                    }
-                    console.log(this.activeG);
-                    // this.xPos=Math.random()*window.innerWidth;
-                    //this.yPos = Math.random()*window.innerHeight;
-                    this.r = degrees(Math.atan((GravClusters[this.activeG].cY - this.yPos) / (GravClusters[this.activeG].cX - this.xPos)));
-                    this.d = Math.sqrt(Math.pow(Math.abs(this.xPos - GravClusters[this.activeG].cX), 2) + Math.pow(Math.abs(this.yPos - GravClusters[this.activeG].cY), 2));
+                    this.dAcc=-1*this.dAcc;
+                   
 
                 }
                 //console.log(this.d);
@@ -599,7 +622,7 @@
 
         }
 
-        function Trees(maxWidth, maxHeight, whereItGoes) {
+        function Trees(maxWidth, maxHeight, whereItGoes, platform) {
 
             this.canvas = document.createElement('canvas');
             this.canvas.width = Math.random() * (maxWidth - (maxWidth / 2)) + (maxWidth / 2) * 1.2;
@@ -609,9 +632,16 @@
             this.canvas2 = document.createElement('canvas');
             this.canvas2.width = this.canvas.width;
             this.canvas2.height = this.canvas.height;
-            this.context2 = this.canvas.getContext('2d');
+            this.context2 = this.canvas2.getContext('2d');
+            
+            this.canvas3 = document.createElement('canvas');
+            this.canvas3.width = this.canvas.width;
+            this.canvas3.height = this.canvas.height;
+            this.context3 = this.canvas3.getContext('2d');
 
-
+            
+            this.platform = platform;
+            
             this.colors = [];
             this.colors[0] = "rgba(129,101,154";
             this.colors[1] = "rgba(143,78,116";
@@ -650,6 +680,11 @@
             this.branchThickness = [];
             this.lX = [];
             this.lY =[];
+            this.lXMax = [];
+            
+            this.lXMin = [];
+            
+            this.color = [];
             this.lW =[];
             this.lH = [];
             this.lCounter=0;
@@ -669,6 +704,7 @@
                 this.yPos[this.branchTracking] = startY + Math.sin(angle) * (Math.random() * d);
                 this.generation[this.branchTracking] = howFar;
                 
+                this.checkX(startX,d);
                 
                 this.context.beginPath();
                 canvasReset(this.context);
@@ -692,6 +728,10 @@
                 this.xPos[this.branchTracking] = startX + Math.cos(angle) * (Math.random() * (d / 2) + (d / 2));
 
                 this.yPos[this.branchTracking] = startY + Math.sin(angle) * (Math.random() * (d / 2) + (d / 2));
+                
+                
+                this.checkX(startX,d);
+                
                 this.branchColor[this.branchTracking] = this.getRandomColor(1);
                 this.context.strokeStyle =  this.branchColor[this.branchTracking];
                 this.context.beginPath();
@@ -700,17 +740,10 @@
                 this.context.lineTo(this.xPos[this.branchTracking], this.yPos[this.branchTracking]);
                 this.context.stroke();
 
-                for (var i = 0; i < Math.random() * 23; i++) {
-                    this.lX[this.lCounter] = (Math.random() * 40 - 20);
-                    this.lY[this.lCounter] = (Math.random() * 40 - 20);
-                    this.lW[this.lCounter] =  Math.random() * 15;
-                    this.lH[this.lCounter] =  Math.random() * 15;
-                    this.context.fillStyle = this.getRandomColor(0.6);
-                    this.context.beginPath();
-                    this.context.rect(this.xPos[this.branchTracking] + this.lX[this.lCounter], this.yPos[this.branchTracking] + this.lY[this.lCounter], this.lW[this.lCounter], this.lH[this.lCounter]);
-                    this.lCounter++;
-                    this.context.fill();
-                }
+               
+                
+                
+                
 
                 if (l > .1 * this.canvas.height) {
 
@@ -733,22 +766,36 @@
             };
 
             
+            this.checkX = function(startX, d) {
+                
+                 if(this.xPos[this.branchTracking]<.1*this.canvas.width) {
+                 this.xPos[this.branchTracking]= .1*this.canvas.width + (Math.random() * (.15*this.canvas.width) );   
+                 }
+                
+                if (this.xPos[this.branchTracking]<.1*this.canvas.width) {
+                    this.xPos[this.branchTracking]= .9*this.canvas.width - (Math.random() * (.15*this.canvas.width) );    
+                }
+                      
+                    
+                
+            };
             
-            
-            this.newBranches = function (startX, startY, l, t, howFar) {
+            this.newBranches = function (startX, startY, l, t, howFar, wholeTree) {
               
                  //this.iterations -= 1;
+               
                 l = .8 * l;
                 t = .8 * t;
-
                 this.branchTracking++;
+                  
                 var angle = radians(Math.random() * -90 + 45);
                  this.r[this.branchTracking] += .00002;
                 var d = Math.random() * l;
-                this.xPos[this.branchTracking] = startX + Math.cos( this.r[this.branchTracking]) * (Math.random() * d);
-                this.yPos[this.branchTracking] = startY + Math.sin( this.r[this.branchTracking]) * (Math.random() * d);
+                this.xPos[this.branchTracking] = Math.floor(startX + Math.cos( this.r[this.branchTracking]) * (Math.random() * d));
+                this.yPos[this.branchTracking] = Math.floor(startY + Math.sin( this.r[this.branchTracking]) * (Math.random() * d));
                 //this.generation[this.branchTracking] = howFar;
                 
+                    this.checkX(startX,d);
                 
                 this.context.beginPath();
                 canvasReset(this.context);
@@ -761,17 +808,20 @@
                 this.context.moveTo(startX, startY);
                 this.context.lineTo(this.xPos[this.branchTracking], this.yPos[this.branchTracking]);
                 this.context.stroke();
-
+                
                 this.branchTracking++;
                // this.generation[this.branchTracking] = howFar;
-
+          
                 angle = radians(Math.random() * -180 - 45);
                  this.r[this.branchTracking] += .00002;
                d = Math.random() * l;
 
-               this.xPos[this.branchTracking] = startX + Math.cos( this.r[this.branchTracking]) * (Math.random() * (d / 2) + (d / 2));
+               this.xPos[this.branchTracking] = Math.floor(startX + Math.cos( this.r[this.branchTracking]) * (Math.random() * (d / 2) + (d / 2)));
 
-                this.yPos[this.branchTracking] = startY + Math.sin( this.r[this.branchTracking]) * (Math.random() * (d / 2) + (d / 2));
+                this.yPos[this.branchTracking] = Math.floor(startY + Math.sin( this.r[this.branchTracking]) * (Math.random() * (d / 2) + (d / 2)));
+                
+                this.checkX(startX,d);  
+                
                // this.branchColor[this.branchTracking] = this.getRandomColor(1);
                 this.context.strokeStyle =  this.branchColor[this.branchTracking];
                 this.context.beginPath();
@@ -779,14 +829,35 @@
                 this.context.moveTo(startX, startY);
                 this.context.lineTo(this.xPos[this.branchTracking], this.yPos[this.branchTracking]);
                 this.context.stroke();
-
-                for (var i = 0; i < Math.random() * 23+10; i++) {
-
-                    this.context.fillStyle = this.getRandomColor(0.6);
-                    this.context.beginPath();
-                   this.context.rect(this.xPos[this.branchTracking] + this.lX[this.lCounter], this.yPos[this.branchTracking] + this.lY[this.lCounter], this.lW[this.lCounter], this.lH[this.lCounter]);
+         
+               
+                  for (var i = 0; i < Math.random() * 23; i++) {
+                    this.lX[this.lCounter] = this.xPos[this.branchTracking] + (Math.random() * 40 - 20);
+                    this.lXMax[this.lCounter] = this.lX[this.lCounter]+30;
+                    this.lXMin[this.lCounter] = this.lX[this.lCounter]-30;
+                    this.lY[this.lCounter] = this.yPos[this.branchTracking] +(Math.random() * 40 - 20);
+                    this.lW[this.lCounter] =  Math.floor(Math.random() * 15)+1;
+                    this.lH[this.lCounter] =  Math.floor(Math.random() * 15)+1;
+                      if ((i==0)||(i=10)||(i==17)){
+                    this.color[this.lCounter] = this.getRandomColor(0.2);
+                      } else {
+                         this.color[this.lCounter-1] = this.getRandomColor(0.2); 
+                      }
+                      
+                      this.context2.fillStyle =  this.color[this.lCounter];
+                    this.context2.beginPath();
+                    this.context2.rect(this.lX[this.lCounter], this.lY[this.lCounter], this.lW[this.lCounter], this.lH[this.lCounter]);
                     this.lCounter++;
-                    this.context.fill();
+                    this.context2.fill();
+            
+                      
+                /*
+                    this.context2.fillStyle =  this.color[this.lCounter];
+                    this.context2.beginPath();
+                   this.context2.rect(this.xPos[this.branchTracking] + this.lX[this.lCounter], this.yPos[this.branchTracking] + this.lY[this.lCounter], this.lW[this.lCounter], this.lH[this.lCounter]);
+                    this.lCounter++;
+                    this.context2.fill();
+                */
                 }
 
                 if (l > .2 * this.canvas.height) {
@@ -798,16 +869,71 @@
 
 
 
-                    this.newBranches(x1, y1, l, t, howFar + 1);
-                    this.newBranches(x2, y2, l, t, howFar + 1);
+                    this.newBranches(x1, y1, l, t, howFar + 1,wholeTree);
+                    this.newBranches(x2, y2, l, t, howFar + 1,wholeTree);
                     
+                    
+                    x1 = null;
+                    x2 = null;
+                    y1 = null;
+                    y2 = null;
                         }
                 
             };
             
-            this.newTrunk = function () {
+            this.updateLeaves = function() {
+                 for (var i = 0; i < this.lX.length; i++) {
+                     if (this.platform.rSpeed<0) {
+                    this.lX[i] = Math.floor(lerp(this.lX[i],this.lXMax[i],.05));
+                     } else {
+                     this.lX[i] = Math.floor(lerp(this.lX[i],this.lXMin[i],.05));    
+                         
+                     }
+                   
+                     if (Math.random()<.1) {
+                         this.lY[i] += Math.floor(Math.random()*5);   
+                     }
+                   
+                  
+                    this.context2.fillStyle =  this.color[i];
+                    this.context2.beginPath();
+                    this.context2.rect(this.lX[i], this.lY[i], this.lW[i], this.lH[i]);
+                    this.lCounter++;
+                  if (this.color[i]!=this.color[i+1]) {
+                     this.context2.fill();     
+                  }
+            
+                      
+                
+                }
+                 
+                
+            };
+            
+            this.newTrunk = function (wholeTree) {
                  this.branchTracking = 1;
-                this.lCounter=0;
+                this.lX = [];
+            this.lY =[];
+            this.lXMax = [];
+            
+            this.lXMin = [];
+            
+            this.color = [];
+            this.lW =[];
+            this.lH = [];
+            this.lCounter=0;
+                
+                this.xPos = [];
+            this.yPos = [];
+            this.l = Math.random() * (.3 * (this.canvas.height+200)) + (.3 * (this.canvas.height+200));
+
+            this.xPos[0] = .5 * this.canvas.width;
+            this.yPos[0] = this.canvas.height;
+            this.xPos[1] = .5 * this.canvas.width;
+            this.yPos[1] = this.l;
+            
+                
+               
                 this.context.clearRect(0,0,this.canvas.width, this.canvas.height);
                 this.context.strokeStyle = this.branchColor[0];
                 this.context.lineWidth = this.thickness;
@@ -815,35 +941,50 @@
                 this.context.moveTo(this.xPos[0], this.yPos[0]);
                 this.context.lineTo(this.xPos[1], this.yPos[1]);
                 this.context.stroke();
-            
-                this.newBranches(this.xPos[1], this.yPos[1], this.yPos[0] - this.yPos[1], this.thickness, 1);
+              
+                this.newBranches(this.xPos[1], this.yPos[1], this.yPos[0] - this.yPos[1], this.thickness, 1, wholeTree);
 
 
 
 
             }
 
-
+            this.threeAlarm = 0;
             this.update = function () {
                this.timer++;
-            
+               this.threeAlarm++;
+                
+                if (this.threeAlarm>=3) {
+                 this.threeAlarm=0;   
+                  this.updateLeaves();
+                }
                 
                 if (this.timer>this.timerMax*.95) {
                     if (Math.random()<.4) {
-                    this.newTrunk();
+                        this.context.clearRect(0,0,this.canvas.width, this.canvas.height);
+                        this.context2.clearRect(0,0,this.canvas.width, this.canvas.height);
+                    this.newTrunk(true);
                     }
                 
                     if (this.timer>=this.timerMax) {
                      this.timer=0;
                      this.timerMax=Math.floor( Math.random()*1000+120)
                     }
-                
+                  
+                    
                 }
-
+              
             };
-            this.display = function (angle, rotation, widthOnPlatform) {
-
-                mCtx.drawImage(this.canvas, 50, 50);
+            this.display = function () {
+                 
+                if (this.timer%2==0) {
+                  // this.context2.clearRect(0,0,this.canvas.width, this.canvas.height);
+                     //this.newTrunk(false);
+                  
+                      this.context3.clearRect(0,0,this.canvas.width, this.canvas.height);
+                this.context3.drawImage(this.canvas,0,0);
+                this.context3.drawImage(this.canvas2,0,0);   
+                }
                 // console.log(this.canvas.width, this.canvas.height);  
 
             }
@@ -969,6 +1110,8 @@
                 //this.platforms[i].display();
 
             }
+            dNew = null;
+            dUp = null;
 
 
             this.rotationSpeed = function (amount) {
@@ -1003,7 +1146,11 @@
 
                 for (var i = 0; i < this.platforms.length; i++) {
                     this.platforms[i].collisionDetection();
+                     this.platforms[i].update();   
                 }
+                
+                
+                
 
                 if ((this.cX < window.innerWidth + this.halfW) && (this.cX > -this.halfW)) {
                     if ((this.cY > -this.halfH) && (this.cY < window.innerHeight + this.halfH)) {
@@ -1049,7 +1196,7 @@
             this.hasTree = false;
             if (Math.random() < .3) {
                 this.hasTree = true;
-                this.tree = new Trees(this.landCanvas.width * 2, this.landCanvas.width * 2, Math.random() * .5 + .25);
+                this.tree = new Trees(this.landCanvas.width * 2, this.landCanvas.width * 2, Math.random() * .5 + .25, this);
                 this.tree.createTrunk();
             }
 
@@ -1193,13 +1340,36 @@
                 }
                 this.land.fill();
 
+                 side = null;
+                x = null;
+                startX = null;
+                startY = null;
+                y = null;
+                width = null;
+                height = null;
+                xAdd = null;
+                yAdd = null;
+                //console.log(yAdd);
+                r1 = null;
+                r2 = null;
+                r3 = null;
+                r4 = null;
+                
+                whichColor = null;
 
+               color = null;
+                
             };
 
             this.createLand();
             this.createLand();
             this.createLand();
-
+            this.update = function() {
+                
+              if (this.hasTree) {
+                            this.tree.update();
+              }
+            }
 
 
             this.display = function () {
@@ -1219,10 +1389,11 @@
                 this.context.lineWidth = 5;
                 */
 
-                        this.context.drawImage(this.landCanvas, -.5 * this.w, 0);
+                        this.context.drawImage(this.landCanvas, Math.floor(-.5 * this.w), 0);
+                        
                         if (this.hasTree) {
-                            this.tree.update();
-                            this.context.drawImage(this.tree.canvas, -.75 * this.w, -1 * this.tree.canvas.height);
+                            this.tree.display();
+                            this.context.drawImage(this.tree.canvas3, Math.floor(-.75 * this.w), -1 * this.tree.canvas.height);
                         }
                     }
                 }
