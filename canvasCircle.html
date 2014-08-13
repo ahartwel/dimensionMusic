@@ -29,11 +29,11 @@
     }
 </style>
 
-<body>
+<body onload="loader">
 
     <canvas id="bCanvas"></canvas>
     <canvas id="mainCanvas"></canvas>
-    <div id="fps"></div>
+   
 
 
     <script>
@@ -87,9 +87,7 @@ CLOSURES
 
 
         var filterStrength = 20;
-        var frameTime = 0,
-            lastLoop = new Date,
-            thisLoop;
+       
 
         var mainC = document.getElementById("mainCanvas");
         var bC = document.getElementById("bCanvas");;
@@ -120,6 +118,7 @@ CLOSURES
         window.addEventListener("keydown", keyPressed, false);
 
         function keyPressed(e) {
+            e.preventDefault();
             switch (e.keyCode) {
             case 37: //left
 
@@ -144,22 +143,36 @@ CLOSURES
                 setTimeout(function () {
                     person.falling = false;
 
-                }, 300);
+                }, 550);
                 break;
 
             case 32:
 
                 break;
 
+            case 65:
+                person.movePlayer("left");
+                    console.log("left");
+                    //a
+                break;
+                
+                    
+            case 68:
+                 person.movePlayer("right");
+                     console.log("right"); //d    
+                break;
             }
+            
+            
+            
         }
 
 
+       
+      
 
-
-
-        requestAnimationFrame(animate);
-
+       
+            
         function animate() {
 
             mCtx.clearRect(0, 0, mainC.width, mainC.height);
@@ -174,22 +187,32 @@ CLOSURES
             bG.update();
 
 
-            var thisFrameTime = (thisLoop = new Date) - lastLoop;
-            frameTime += (thisFrameTime - frameTime) / filterStrength;
-            lastLoop = thisLoop;
+        
 
             requestAnimationFrame(animate);
         }
 
+        
+        /* setInterval(function() {
 
-        var fpsOut = document.getElementById('fps');
-        setInterval(function () {
-            if (Math.random() < .5) {
-                fpsOut.innerHTML = (1000 / frameTime).toFixed(1) + " fps";
+            mCtx.clearRect(0, 0, mainC.width, mainC.height);
+            for (var i = 0; i < GravClusters.length; i++) {
+                GravClusters[i].update();
 
             }
-        }, 1000);
 
+            person.display();
+            person.update();
+            bG.display();
+            bG.update();
+
+
+        
+
+            requestAnimationFrame(animate);
+        }, 1000/45);
+
+*/
 
 
 
@@ -226,7 +249,27 @@ CLOSURES
             this.context.fill();
 
             this.orbs = [];
-
+           this.moveSpeed=0;
+          
+            
+            this.movePlayer = function(direction) {
+              if (direction == "right") {
+               this.moveSpeed=.8;
+                
+                  
+                 
+                                } else {
+               this.moveSpeed=-0.8;
+                 
+              }
+                /*
+                console.log("1: " + this.r + " " + this.d);
+                   this.d = dist(this.xPos,this.yPos,GravClusters[this.activeG].cX,GravClusters[this.activeG].cY);
+                  this.r = degrees( Math.asin( (this.yPos - GravClusters[this.activeG].cY )/this.d ));
+                 console.log("2: " + this.r + " " + this.d);
+                */
+            };
+            
             for (var i = 0; i < 5; i++) {
                 this.orbs[i] = new PlayerOrbs(.48 * this.canvas.width, this.context, this.canvas.width);
                 this.orbs[i].display();
@@ -266,6 +309,11 @@ CLOSURES
 
                 this.dAcc += this.gravity;
                 this.r += this.rSpeed;
+                this.r += this.moveSpeed;
+               
+                this.moveSpeed = lerp(this.moveSpeed,0,.15);
+                
+                
 
                 this.rSpeed = lerp(this.rSpeed, 0, this.rAcc);
 
@@ -684,7 +732,7 @@ CLOSURES
             
             this.lXMin = [];
             
-            this.color = [];
+            this.color = 0;
             this.lW =[];
             this.lH = [];
             this.lCounter=0;
@@ -839,12 +887,13 @@ CLOSURES
                     this.lW[this.lCounter] =  Math.floor(Math.random() * 15)+1;
                     this.lH[this.lCounter] =  Math.floor(Math.random() * 15)+1;
                       if ((i==0)||(i=10)||(i==17)){
-                    this.color[this.lCounter] = this.getRandomColor(0.2);
+                    this.color = this.getRandomColor(0.05);
+                    
                       } else {
-                         this.color[this.lCounter-1] = this.getRandomColor(0.2); 
+                        this.color = this.getRandomColor(0.05); 
                       }
                       
-                      this.context2.fillStyle =  this.color[this.lCounter];
+                      this.context2.fillStyle =  this.color;
                     this.context2.beginPath();
                     this.context2.rect(this.lX[this.lCounter], this.lY[this.lCounter], this.lW[this.lCounter], this.lH[this.lCounter]);
                     this.lCounter++;
@@ -880,32 +929,39 @@ CLOSURES
                         }
                 
             };
-            
+            this.leavesX = 0;
+            this.leavesY = 0;
             this.updateLeaves = function() {
                  for (var i = 0; i < this.lX.length; i++) {
-                     if (this.platform.rSpeed<0) {
-                    this.lX[i] = Math.floor(lerp(this.lX[i],this.lXMax[i],.05));
-                     } else {
-                     this.lX[i] = Math.floor(lerp(this.lX[i],this.lXMin[i],.05));    
-                         
-                     }
+                     
                    
-                     if (Math.random()<.1) {
+                     if (Math.random()<.2) {
                          this.lY[i] += Math.floor(Math.random()*5);   
-                     }
-                   
-                  
-                    this.context2.fillStyle =  this.color[i];
+                         this.context2.fillStyle =  this.getRandomColor(.05);
+                         if (Math.random()<.051) {
+                            this.context2.fillStyle =  this.getRandomColor(1); 
+                         }
                     this.context2.beginPath();
                     this.context2.rect(this.lX[i], this.lY[i], this.lW[i], this.lH[i]);
                     this.lCounter++;
-                  if (this.color[i]!=this.color[i+1]) {
+                  
                      this.context2.fill();     
-                  }
+                 
+                     
+                     }
+                   
+                  
+                   
             
                       
                 
                 }
+                if (this.platform.rSpeed<0) {
+                    this.leavesX = Math.floor(lerp(this.leavesX,50,.05));
+                     } else {
+                     this.leavesX = Math.floor(lerp(this.leavesX,-50,.05));    
+                         
+                     }
                  
                 
             };
@@ -963,7 +1019,9 @@ CLOSURES
                     if (Math.random()<.4) {
                         this.context.clearRect(0,0,this.canvas.width, this.canvas.height);
                         this.context2.clearRect(0,0,this.canvas.width, this.canvas.height);
+                        this.context3.clearRect(0,0,this.canvas.width, this.canvas.height);
                     this.newTrunk(true);
+                           this.context3.drawImage(this.canvas,0,0);
                     }
                 
                     if (this.timer>=this.timerMax) {
@@ -981,9 +1039,9 @@ CLOSURES
                   // this.context2.clearRect(0,0,this.canvas.width, this.canvas.height);
                      //this.newTrunk(false);
                   
-                      this.context3.clearRect(0,0,this.canvas.width, this.canvas.height);
-                this.context3.drawImage(this.canvas,0,0);
-                this.context3.drawImage(this.canvas2,0,0);   
+                     // this.context3.clearRect(0,0,this.canvas.width, this.canvas.height);
+               // this.context3.drawImage(this.canvas,0,0);
+                this.context3.drawImage(this.canvas2,this.leavesX,0);   
                 }
                 // console.log(this.canvas.width, this.canvas.height);  
 
@@ -1438,6 +1496,9 @@ CLOSURES
                     var y = lerp(bY, aY, d / (d + c));
                     //console.log(d);
                     if (dist(person.xPos, person.yPos, x, y) <= person.w) {
+                    
+                      
+                        
                         if (person.dAcc > 0) {
                             if (person.falling) {
                                 person.dAcc = 2;
@@ -1510,6 +1571,10 @@ CLOSURES
         function canvasReset(context) {
             context.setTransform(1, 0, 0, 1, 0, 0);
         }
+        
+        
+          requestAnimationFrame(animate);
+        
     </script>
 </body>
 
